@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+
+  /* semáforos de janela (specs oficiais da HIG) */
+  --color-tl-red: #ff5f57;
+  --color-tl-yellow: #febc2e;
+  --color-tl-green: #28c840;
+  --color-tl-gray: #cdcdce;
+
+  --color-accent: #0a84ff;
+  --ease-mac: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-black font-sans antialiased select-none overflow-hidden;
+}
+
+/* Vibrancy / painéis de vidro */
+.glass {
+  background: rgb(255 255 255 / 0.66);
+  backdrop-filter: blur(28px) saturate(1.7);
+  -webkit-backdrop-filter: blur(28px) saturate(1.7);
+}
+.dark .glass {
+  background: rgb(28 28 30 / 0.66);
+}
+.glass-strong {
+  background: rgb(255 255 255 / 0.85);
+  backdrop-filter: blur(28px) saturate(1.7);
+  -webkit-backdrop-filter: blur(28px) saturate(1.7);
+}
+.dark .glass-strong {
+  background: rgb(38 38 41 / 0.85);
+}
+
+/* Wallpapers em gradiente — recriação própria, zero assets da Apple */
+.wp-0 {
+  background:
+    radial-gradient(140% 110% at 78% 6%, #7fa7f8 0%, rgb(127 167 248 / 0) 55%),
+    radial-gradient(120% 90% at 10% 12%, #ffb199 0%, rgb(255 177 153 / 0) 50%),
+    linear-gradient(188deg, #23325c 0%, #5a4a8c 48%, #d4793f 100%);
+}
+.wp-1 {
+  background:
+    radial-gradient(120% 90% at 85% 12%, #ffd89b 0%, rgb(255 216 155 / 0) 55%),
+    linear-gradient(180deg, #0f2027 0%, #2c5364 58%, #6b9ea8 100%);
+}
+.wp-2 {
+  background:
+    radial-gradient(130% 100% at 18% 8%, #f6d365 0%, rgb(246 211 101 / 0) 50%),
+    linear-gradient(200deg, #292e49 0%, #536976 55%, #bdc2c8 100%);
+}
+.wp-3 {
+  background:
+    radial-gradient(120% 100% at 80% 88%, #f5576c 0%, rgb(245 87 108 / 0) 48%),
+    linear-gradient(160deg, #0b101e 0%, #232b45 55%, #4a3f6b 100%);
+}
+.wp-solid-0 { background: #1d3461; }
+.wp-solid-1 { background: #0e2431; }
+.wp-solid-2 { background: #3d2b3d; }
+.wp-solid-3 { background: #14342b; }
+
+/* Scrollbars discretos estilo macOS */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(0 0 0 / 0.22); border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.22); }
+
+/* Bounce de abertura no Dock */
+@keyframes dock-bounce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-26%); }
+  55% { transform: translateY(0); }
+  75% { transform: translateY(-14%); }
+}
+.dock-bounce { animation: dock-bounce 0.9s var(--ease-mac) 1; }
+
+/* Sombra de janela focada/inativa (HIG: key window = sombra forte) */
+.win-shadow-focus { box-shadow: 0 22px 70px 4px rgb(0 0 0 / 0.45), 0 6px 18px 2px rgb(0 0 0 / 0.3); }
+.win-shadow-blur { box-shadow: 0 12px 32px 4px rgb(0 0 0 / 0.25); }

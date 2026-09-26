@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gerar ícones
+        shell: pwsh
+        run: ./scripts/make-icons.ps1
+
+      - name: Build (Tauri)
+        run: npx tauri build --target ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-windows-${{ matrix.target }}
+          path: |
+            src-tauri/target/*/release/bundle/msi/*.msi
+            src-tauri/target/*/release/bundle/nsis/*.exe
