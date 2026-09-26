@@ -8,12 +8,12 @@ import type { FocusMode } from "./types";
  * (retoma tudo que foi congelado e devolve o Windows intacto).
  */
 export const sessionFlow = {
-  async enter(mode: FocusMode) {
+  async enter(mode: FocusMode, pids?: number[]) {
     const s = useSession.getState();
     let frozen = 0;
     if (mode !== "none") {
       try {
-        const st = await ipc.focusEnter(mode);
+        const st = await ipc.focusEnter(mode, pids);
         frozen = st.pids.length;
       } catch (e) {
         console.error("focus_enter falhou", e);

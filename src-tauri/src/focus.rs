@@ -199,8 +199,16 @@ pub fn focus_candidates() -> Result<Vec<ProcInfo>, String> {
 }
 
 #[tauri::command]
-pub fn focus_enter(mode: String) -> Result<FocusState, String> {
-    let list = candidates();
+pub fn focus_enter(mode: String, pids: Option<Vec<u32>>) -> Result<FocusState, String> {
+    let all = candidates();
+    // Se o frontend mandou uma seleção, restringe a ela (validando contra os candidatos).
+    let list: Vec<ProcInfo> = match pids {
+        Some(sel) => {
+            let sel: HashSet<u32> = sel.into_iter().collect();
+            all.into_iter().filter(|p| sel.contains(&p.pid)).collect()
+        }
+        None => all,
+    };
     let affected: Vec<ProcInfo> = match mode.as_str() {
         "suspend" => list.into_iter().filter(|p| nt::suspend(p.pid)).collect(),
         "terminate" => list.into_iter().filter(|p| nt::terminate(p.pid)).collect(),

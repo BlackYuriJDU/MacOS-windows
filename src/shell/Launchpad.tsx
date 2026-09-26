@@ -13,16 +13,19 @@ export default function Launchpad() {
 
   return (
     <div
-      className="fixed inset-0 z-[8000] flex flex-col items-center gap-10 bg-black/35 pt-16 backdrop-blur-2xl"
+      className="fixed inset-0 z-[8000] flex flex-col items-center gap-9 bg-black/30 pt-14 backdrop-blur-3xl"
       onPointerDown={() => setLaunchpad(false)}
     >
-      <div className="glass-strong flex w-64 items-center gap-2 rounded-xl px-3" onPointerDown={(e) => e.stopPropagation()}>
+      <p className="text-[15px] font-semibold text-white/90" style={{ textShadow: "0 1px 3px rgb(0 0 0 / 0.3)" }}>
+        Apps
+      </p>
+      <div className="glass-strong flex w-64 items-center gap-2 rounded-full px-3.5" onPointerDown={(e) => e.stopPropagation()}>
         <Magnifier className="h-4 w-4 opacity-50" />
         <input
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar"
+          placeholder="Buscar apps"
           className="h-9 w-full bg-transparent text-[13px] text-black outline-none dark:text-white"
         />
       </div>

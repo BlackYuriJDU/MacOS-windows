@@ -23,6 +23,7 @@ export default function MenuBar() {
   const activeAppId = useWindows((s) => s.focused()?.appId) ?? "finder";
   const [drop, setDrop] = useState<Dropdown>(null);
   const [calOpen, setCalOpen] = useState(false);
+  const [power, setPower] = useState<null | "restart" | "shutdown">(null);
   const barRef = useRef<HTMLDivElement>(null);
 
   const appMenus: AppMenu[] = buildMenus(activeAppId);
@@ -55,8 +56,8 @@ export default function MenuBar() {
       ? [{ label: "Sair do Modo Foco", action: () => sessionFlow.leaveFocus() } as MenuItem]
       : []),
     { separator: true },
-    { label: "Reiniciar…", action: () => sessionFlow.restart() },
-    { label: "Desligar…", action: () => sessionFlow.shutdown() },
+    { label: "Reiniciar…", action: () => setPower("restart") },
+    { label: "Desligar…", action: () => setPower("shutdown") },
   ];
 
   const hover = (d: Dropdown) => {
@@ -66,8 +67,12 @@ export default function MenuBar() {
   return (
     <div
       ref={barRef}
-      className="glass fixed inset-x-0 top-0 z-[5000] flex items-stretch text-[13px] text-black dark:text-white"
-      style={{ height: MENUBAR_H }}
+      className="fixed inset-x-0 top-0 z-[5000] flex items-stretch text-[13px] text-black dark:text-white"
+      style={{
+        height: MENUBAR_H,
+        // Tahoe: menu bar totalmente transparente, texto com sombra sutil p/ legibilidade
+        textShadow: "0 1px 2px rgb(0 0 0 / 0.18), 0 0 1px rgb(0 0 0 / 0.12)",
+      }}
     >
       {/* Menu  (logo) */}
       <div className="relative flex">
@@ -152,6 +157,76 @@ export default function MenuBar() {
       </div>
 
       {calOpen && <Calendar now={now} />}
+
+      {/* Pop-up de energia (Tahoe: Restart/Shut Down viram diálogo modal, não ação direta) */}
+      {power && (
+        <PowerDialog
+          kind={power}
+          onCancel={() => setPower(null)}
+          onConfirm={() => {
+            setPower(null);
+            if (power === "restart") sessionFlow.restart();
+            else sessionFlow.shutdown();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PowerDialog({
+  kind,
+  onCancel,
+  onConfirm,
+}: {
+  kind: "restart" | "shutdown";
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const isRestart = kind === "restart";
+  return (
+    <div
+      className="fixed inset-0 z-[9500] flex items-center justify-center bg-black/25"
+      onClick={onCancel}
+      style={{ textShadow: "none" }}
+    >
+      <div
+        className="glass-strong w-[300px] rounded-3xl border border-white/40 p-6 text-center text-black shadow-2xl dark:border-white/10 dark:text-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.07] dark:bg-white/10">
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            {isRestart ? (
+              <path d="M21 12a9 9 0 1 1-2.6-6.3M21 4v5h-5" />
+            ) : (
+              <>
+                <path d="M12 3v8" />
+                <path d="M6.3 6.3a8 8 0 1 0 11.4 0" />
+              </>
+            )}
+          </svg>
+        </div>
+        <p className="text-[15px] font-semibold">{isRestart ? "Reiniciar o ambiente?" : "Desligar o ambiente?"}</p>
+        <p className="mt-1.5 text-[12.5px] leading-relaxed opacity-60">
+          {isRestart
+            ? "Os processos congelados serão retomados e o ambiente reinicia."
+            : "Os processos congelados serão retomados e o Windows volta ao normal."}
+        </p>
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-full bg-black/[0.08] py-2 text-[13.5px] font-medium hover:bg-black/12 dark:bg-white/12"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-full bg-accent py-2 text-[13.5px] font-semibold text-white hover:opacity-90"
+          >
+            {isRestart ? "Reiniciar" : "Desligar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

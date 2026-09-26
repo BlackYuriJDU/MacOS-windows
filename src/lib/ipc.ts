@@ -6,6 +6,7 @@ import type {
   FsEntry,
   MachineInfo,
   ProcInfo,
+  TrashEntry,
 } from "./types";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -78,9 +79,9 @@ export const ipc = {
           { pid: 103, name: "spotify.exe" },
         ]),
 
-  focusEnter: (mode: FocusMode): Promise<FocusState> =>
+  focusEnter: (mode: FocusMode, pids?: number[]): Promise<FocusState> =>
     isTauri
-      ? invoke<FocusState>("focus_enter", { mode })
+      ? invoke<FocusState>("focus_enter", { mode, pids: pids ?? null })
       : Promise.resolve({ mode, pids: [{ pid: 101, name: "chrome.exe" }], started_at: Date.now() / 1000 }),
 
   focusExit: (): Promise<number> =>
@@ -91,4 +92,41 @@ export const ipc = {
 
   restartApp: (): Promise<void> =>
     isTauri ? invoke<void>("restart_app") : Promise.resolve(),
+
+  /* ------------------------------ v0.2: hardware ------------------------------ */
+
+  getBrightness: (): Promise<number> =>
+    isTauri ? invoke<number>("get_brightness") : Promise.resolve(80),
+
+  setBrightness: (level: number): Promise<void> =>
+    isTauri ? invoke<void>("set_brightness", { level }) : Promise.resolve(),
+
+  getVolume: (): Promise<number> =>
+    isTauri ? invoke<number>("get_volume") : Promise.resolve(60),
+
+  setVolume: (level: number): Promise<void> =>
+    isTauri ? invoke<void>("set_volume", { level }) : Promise.resolve(),
+
+  /* ------------------------------- v0.2: lixeira ------------------------------ */
+
+  trashList: (): Promise<TrashEntry[]> =>
+    isTauri
+      ? invoke<TrashEntry[]>("trash_list")
+      : Promise.resolve([
+          { name: "relatorio-antigo.docx", original_path: "C:\\Users\\Arthur\\Documents", size: 48211, is_dir: false },
+          { name: "fotos-2024", original_path: "C:\\Users\\Arthur\\Pictures", size: 0, is_dir: true },
+        ]),
+
+  trashMove: (path: string): Promise<void> =>
+    isTauri ? invoke<void>("trash_move", { path }) : Promise.resolve(),
+
+  trashEmpty: (): Promise<void> =>
+    isTauri ? invoke<void>("trash_empty") : Promise.resolve(),
+
+  /* --------------------------- v0.2: navegador real --------------------------- */
+
+  openBrowser: (url: string, title?: string): Promise<void> =>
+    isTauri
+      ? invoke<void>("open_browser", { url, title: title ?? null })
+      : Promise.resolve(window.open(url, "_blank") as unknown as void),
 };

@@ -106,9 +106,15 @@ export default function Dock() {
           e.preventDefault();
           showCtx(e.clientX, e.clientY, [{ label: "Abrir Ajustes do Dock", action: () => openApp("settings") }]);
         }}
-        className={`glass pointer-events-auto m-2 flex items-end gap-1.5 rounded-2xl border border-white/40 px-2 pb-1.5 pt-1.5 shadow-2xl transition-transform duration-300 dark:border-white/10 ${
+        className={`pointer-events-auto m-2 flex items-end gap-1.5 rounded-[22px] border border-white/30 bg-white/40 px-2.5 pb-2 pt-2 transition-transform duration-300 dark:border-white/10 dark:bg-black/35 ${
           visible ? "translate-y-0" : "translate-y-[calc(100%+12px)]"
         }`}
+        style={{
+          // Liquid Glass: mais transparente, flutuando sobre o wallpaper
+          backdropFilter: "blur(30px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(30px) saturate(1.8)",
+          boxShadow: "0 18px 50px rgb(0 0 0 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.28)",
+        }}
       >
         {dockApps.map((app, i) => {
           const Icon = app.icon;

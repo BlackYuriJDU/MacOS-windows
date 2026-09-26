@@ -36,6 +36,13 @@ export interface FocusState {
 
 export type FocusMode = "suspend" | "terminate" | "none";
 
+export interface TrashEntry {
+  name: string;
+  original_path: string;
+  size: number;
+  is_dir: boolean;
+}
+
 export interface MenuItem {
   label?: string;
   shortcut?: string;

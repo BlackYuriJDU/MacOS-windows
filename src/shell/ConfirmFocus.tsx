@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ipc } from "../lib/ipc";
 import type { FocusMode, FocusState, ProcInfo } from "../lib/types";
 import { useSession } from "../store/session";
@@ -27,11 +27,18 @@ export default function ConfirmFocus() {
   const setPhase = useSession((s) => s.setPhase);
   const [mode, setMode] = useState<FocusMode>("suspend");
   const [candidates, setCandidates] = useState<ProcInfo[] | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [recovery, setRecovery] = useState<FocusState | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    ipc.focusCandidates().then(setCandidates).catch(() => setCandidates([]));
+    ipc
+      .focusCandidates()
+      .then((list) => {
+        setCandidates(list);
+        setSelected(new Set(list.map((c) => c.pid))); // tudo marcado por padrão
+      })
+      .catch(() => setCandidates([]));
     ipc
       .focusState()
       .then((st) => {
@@ -40,13 +47,28 @@ export default function ConfirmFocus() {
       .catch(() => {});
   }, []);
 
-  const names = Array.from(new Set((candidates ?? []).map((c) => c.name.replace(/\.exe$/i, ""))));
+  const toggle = (pid: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(pid)) next.delete(pid);
+      else next.add(pid);
+      return next;
+    });
+  };
+
+  const allSelected = useMemo(
+    () => (candidates ? selected.size === candidates.length && candidates.length > 0 : false),
+    [candidates, selected]
+  );
+  const toggleAll = () => {
+    if (!candidates) return;
+    setSelected(allSelected ? new Set() : new Set(candidates.map((c) => c.pid)));
+  };
 
   const recover = async () => {
     setBusy(true);
     try {
-      const resumed = await ipc.focusExit();
-      console.log(`recuperação: ${resumed} processos retomados`);
+      await ipc.focusExit();
     } finally {
       setRecovery(null);
       setBusy(false);
@@ -55,7 +77,9 @@ export default function ConfirmFocus() {
 
   const enter = (m: FocusMode) => {
     setBusy(true);
-    sessionFlow.enter(m);
+    // Modo Foco seletivo: passa os PIDs escolhidos (ou undefined = todos).
+    const pids = m === "none" ? undefined : allSelected ? undefined : Array.from(selected);
+    sessionFlow.enter(m, pids);
   };
 
   return (
@@ -103,18 +127,38 @@ export default function ConfirmFocus() {
         </div>
 
         {mode !== "none" && (
-          <div className="mt-4 rounded-xl bg-black/5 p-3 text-[12.5px] dark:bg-white/5">
+          <div className="mt-4 rounded-xl bg-black/5 p-3 dark:bg-white/5">
             {candidates === null ? (
-              <p className="opacity-60">Verificando processos…</p>
-            ) : names.length === 0 ? (
-              <p className="opacity-60">Nenhum aplicativo em segundo plano para afetar.</p>
+              <p className="text-[12.5px] opacity-60">Verificando processos…</p>
+            ) : candidates.length === 0 ? (
+              <p className="text-[12.5px] opacity-60">Nenhum aplicativo em segundo plano para afetar.</p>
             ) : (
               <>
-                <p className="mb-1.5 font-medium">{candidates.length} processos serão afetados:</p>
-                <p className="leading-relaxed opacity-70">
-                  {names.slice(0, 9).join(", ")}
-                  {names.length > 9 ? ` e mais ${names.length - 9}` : ""}
-                </p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[12.5px] font-medium">
+                    {selected.size} de {candidates.length} processos selecionados
+                  </p>
+                  <button onClick={toggleAll} className="text-[11.5px] text-accent hover:underline">
+                    {allSelected ? "Desmarcar tudo" : "Selecionar tudo"}
+                  </button>
+                </div>
+                <div className="max-h-40 space-y-0.5 overflow-y-auto pr-1">
+                  {candidates.map((c) => (
+                    <label
+                      key={c.pid}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.has(c.pid)}
+                        onChange={() => toggle(c.pid)}
+                        className="h-3.5 w-3.5 accent-[#0a84ff]"
+                      />
+                      <span className="flex-1 truncate text-[12.5px]">{c.name.replace(/\.exe$/i, "")}</span>
+                      <span className="text-[10.5px] tabular-nums opacity-40">{c.pid}</span>
+                    </label>
+                  ))}
+                </div>
               </>
             )}
           </div>
@@ -130,7 +174,7 @@ export default function ConfirmFocus() {
           </button>
           <button
             onClick={() => enter(mode)}
-            disabled={busy}
+            disabled={busy || (mode !== "none" && selected.size === 0 && (candidates?.length ?? 0) > 0)}
             className="rounded-xl bg-accent px-5 py-2 text-[14px] font-semibold text-white shadow-lg shadow-accent/30 transition active:scale-[0.98] disabled:opacity-50"
           >
             Entrar

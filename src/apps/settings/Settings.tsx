@@ -1,16 +1,27 @@
 import { useState } from "react";
-import { useSettings, type Theme } from "../../store/settings";
+import { useSettings, type Theme, type Accent } from "../../store/settings";
 import { Logo } from "../../components/Logo";
 
 const WALLPAPERS = [
-  { id: "wp-0", label: "Crepúsculo" },
+  { id: "wp-0", label: "Tahoe" },
+  { id: "wp-0-dark", label: "Tahoe Escuro" },
   { id: "wp-1", label: "Oceano" },
   { id: "wp-2", label: "Areia" },
   { id: "wp-3", label: "Rubí" },
   { id: "wp-solid-0", label: "Azul" },
   { id: "wp-solid-1", label: "Noite" },
   { id: "wp-solid-2", label: "Ameixa" },
-  { id: "wp-solid-3", label: "Musgo" },
+];
+
+const ACCENTS: { id: Accent; color: string }[] = [
+  { id: "blue", color: "#0a84ff" },
+  { id: "purple", color: "#bf5af2" },
+  { id: "pink", color: "#ff375f" },
+  { id: "red", color: "#ff453a" },
+  { id: "orange", color: "#ff9f0a" },
+  { id: "yellow", color: "#ffd60a" },
+  { id: "green", color: "#32d74b" },
+  { id: "grey", color: "#98989d" },
 ];
 
 const PANES = ["Aparência", "Papel de Parede", "Dock e Barra de Menus", "Modo Foco", "Sobre"] as const;
@@ -53,23 +64,40 @@ export default function Settings({ props: p }: { props?: Record<string, unknown>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5">
         {pane === "Aparência" && (
-          <Group title="Tema">
-            <Row label="Aparência">
-              <div className="flex gap-0.5 rounded-lg bg-black/10 p-0.5 dark:bg-white/10">
-                {(["light", "dark", "auto"] as Theme[]).map((t) => (
+          <>
+            <Group title="Tema">
+              <Row label="Aparência">
+                <div className="flex gap-0.5 rounded-lg bg-black/10 p-0.5 dark:bg-white/10">
+                  {(["light", "dark", "auto"] as Theme[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => cfg.set({ theme: t })}
+                      className={`rounded-md px-3 py-1 text-[12px] ${
+                        cfg.theme === t ? "bg-white shadow-sm dark:bg-white/20" : "opacity-60"
+                      }`}
+                    >
+                      {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Automático"}
+                    </button>
+                  ))}
+                </div>
+              </Row>
+            </Group>
+            <Group title="Cor de destaque">
+              <div className="flex flex-wrap gap-2.5 py-2.5">
+                {ACCENTS.map((a) => (
                   <button
-                    key={t}
-                    onClick={() => cfg.set({ theme: t })}
-                    className={`rounded-md px-3 py-1 text-[12px] ${
-                      cfg.theme === t ? "bg-white shadow-sm dark:bg-white/20" : "opacity-60"
+                    key={a.id}
+                    onClick={() => cfg.set({ accent: a.id })}
+                    title={a.id}
+                    className={`h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-transparent transition ${
+                      cfg.accent === a.id ? "ring-black/40 dark:ring-white/60" : "ring-transparent hover:scale-110"
                     }`}
-                  >
-                    {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Automático"}
-                  </button>
+                    style={{ background: a.color }}
+                  />
                 ))}
               </div>
-            </Row>
-          </Group>
+            </Group>
+          </>
         )}
 
         {pane === "Papel de Parede" && (
@@ -130,7 +158,8 @@ export default function Settings({ props: p }: { props?: Record<string, unknown>
                 interface) e todos os processos do sistema.
               </p>
               <p className="opacity-60">
-                A configuração por aplicativo e o modo “finalizar” permanente ficam para a v0.2.
+                Na tela de entrada você escolhe exatamente quais processos congelar (seleção por aplicativo). O modo
+                “finalizar permanente” fica para uma versão futura.
               </p>
             </div>
           </Group>
@@ -141,7 +170,7 @@ export default function Settings({ props: p }: { props?: Record<string, unknown>
             <div className="flex flex-col items-center gap-2 py-4">
               <Logo size={72} />
               <p className="text-[15px] font-semibold">Mac OS</p>
-              <p className="text-[12px] opacity-60">Versão 0.1.0 (Foco)</p>
+              <p className="text-[12px] opacity-60">Versão 0.2.0 (Tahoe)</p>
               <p className="max-w-72 text-center text-[11.5px] leading-relaxed opacity-50">
                 Projeto de fã, sem qualquer afiliação com a Apple. macOS é marca registrada da Apple Inc. Todos os
                 visuais foram recriados — nenhum asset da Apple é distribuído.

@@ -1,6 +1,7 @@
 mod focus;
 mod fs_cmds;
 mod sysinfo_cmds;
+mod trash;
 
 #[cfg(desktop)]
 use tauri::Emitter;
@@ -39,6 +40,14 @@ pub fn run() {
             sysinfo_cmds::battery_status,
             sysinfo_cmds::wifi_ssid,
             sysinfo_cmds::restart_app,
+            sysinfo_cmds::get_brightness,
+            sysinfo_cmds::set_brightness,
+            sysinfo_cmds::get_volume,
+            sysinfo_cmds::set_volume,
+            sysinfo_cmds::open_browser,
+            trash::trash_list,
+            trash::trash_move,
+            trash::trash_empty,
         ])
         .build(tauri::generate_context!())
         .expect("erro ao construir a aplicação Tauri")

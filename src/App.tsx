@@ -24,6 +24,7 @@ import { openApp } from "./apps/registry";
 export default function App() {
   const phase = useSession((s) => s.phase);
   const theme = useSettings((s) => s.theme);
+  const accent = useSettings((s) => s.accent);
   const spotlight = useOverlays((s) => s.spotlight);
   const launchpad = useOverlays((s) => s.launchpad);
   const controlCenter = useOverlays((s) => s.controlCenter);
@@ -42,6 +43,11 @@ export default function App() {
       return () => mq.removeEventListener("change", apply);
     }
   }, [theme]);
+
+  /* Accent color do Tahoe (aplicado via data-accent no <html>) */
+  useEffect(() => {
+    document.documentElement.dataset.accent = accent;
+  }, [accent]);
 
   /* Status do sistema (bateria/wifi) */
   useEffect(() => {

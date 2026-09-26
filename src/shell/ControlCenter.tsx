@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOverlays } from "../store/ui";
 import { useSettings } from "../store/settings";
 import { useSession } from "../store/session";
 import { useSystem } from "../store/system";
+import { ipc } from "../lib/ipc";
 import { BatteryIcon, WifiIcon } from "../components/icons";
 
 export default function ControlCenter() {
@@ -12,8 +13,26 @@ export default function ControlCenter() {
   const frozenCount = useSession((s) => s.frozenCount);
   const battery = useSystem((s) => s.battery);
   const wifi = useSystem((s) => s.wifi);
-  const [brightness, setBrightness] = useState(80);
-  const [volume, setVolume] = useState(60);
+  const [brightness, setBrightnessState] = useState(80);
+  const [volume, setVolumeState] = useState(60);
+  const [brightnessOk, setBrightnessOk] = useState(true);
+  const [volumeOk, setVolumeOk] = useState(true);
+
+  /* Lê o estado real do hardware ao abrir; se o monitor/áudio não expuser
+     controle, degrada o slider para "não suportado" em vez de mentir. */
+  useEffect(() => {
+    ipc.getBrightness().then(setBrightnessState).catch(() => setBrightnessOk(false));
+    ipc.getVolume().then(setVolumeState).catch(() => setVolumeOk(false));
+  }, []);
+
+  const setBrightness = (v: number) => {
+    setBrightnessState(v);
+    ipc.setBrightness(v).catch(() => setBrightnessOk(false));
+  };
+  const setVolume = (v: number) => {
+    setVolumeState(v);
+    ipc.setVolume(v).catch(() => setVolumeOk(false));
+  };
 
   return (
     <div className="fixed inset-0 z-[7000]" onPointerDown={() => setControlCenter(false)}>
@@ -58,10 +77,22 @@ export default function ControlCenter() {
           </Tile>
         </div>
 
-        {/* Brilho e volume (v0.1: controles locais; integração real na v0.2) */}
+        {/* Brilho e volume — controle real do hardware (WMI + Core Audio) */}
         <Panel>
-          <Slider icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" stroke="currentColor" strokeWidth="1.8" fill="none" /></svg>} value={brightness} onChange={setBrightness} />
-          <Slider icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" strokeWidth="1.8" fill="none" /></svg>} value={volume} onChange={setVolume} />
+          <Slider
+            label="Brilho"
+            supported={brightnessOk}
+            icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" stroke="currentColor" strokeWidth="1.8" fill="none" /></svg>}
+            value={brightness}
+            onChange={setBrightness}
+          />
+          <Slider
+            label="Som"
+            supported={volumeOk}
+            icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" strokeWidth="1.8" fill="none" /></svg>}
+            value={volume}
+            onChange={setVolume}
+          />
         </Panel>
 
         {/* Bateria */}
@@ -77,9 +108,6 @@ export default function ControlCenter() {
           </Panel>
         )}
 
-        <p className="mt-1.5 px-1 text-[10.5px] leading-relaxed opacity-40">
-          Brilho e volume são controles locais nesta versão; o controle real do hardware chega na v0.2.
-        </p>
       </div>
     </div>
   );
@@ -122,18 +150,32 @@ function Panel({ children }: { children: React.ReactNode }) {
   return <div className="mt-2 rounded-2xl bg-black/5 p-2.5 dark:bg-white/10">{children}</div>;
 }
 
-function Slider({ icon, value, onChange }: { icon: React.ReactNode; value: number; onChange: (v: number) => void }) {
+function Slider({
+  icon,
+  label,
+  value,
+  onChange,
+  supported,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  supported: boolean;
+}) {
   return (
-    <div className="flex items-center gap-2 py-1">
+    <div className="flex items-center gap-2 py-1" title={supported ? label : `${label} não suportado neste dispositivo`}>
       <span className="opacity-60">{icon}</span>
       <input
         type="range"
         min={0}
         max={100}
         value={value}
+        disabled={!supported}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-[#0a84ff]"
+        className="w-full accent-[#0a84ff] disabled:opacity-30"
       />
+      {!supported && <span className="shrink-0 text-[10px] opacity-40">n/d</span>}
     </div>
   );
 }

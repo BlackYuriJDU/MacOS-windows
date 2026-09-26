@@ -117,3 +117,148 @@ pub fn wifi_ssid() -> Result<Option<String>, String> {
 pub fn restart_app(app: tauri::AppHandle) {
     app.restart();
 }
+
+/* ------------------------------ brilho (WMI) ------------------------------- */
+
+/// Brilho via WMI (WmiMonitorBrightness). Funciona em telas internas de laptop;
+/// monitores externos/desktop geralmente não expõem o método — retorna erro e o
+/// frontend degrada o slider para "não suportado".
+/// Brilho via WMI (WmiMonitorBrightness), orquestrado por PowerShell para não
+/// depender da API exata do crate wmi. Funciona em telas internas de laptop;
+/// monitores externos/desktop geralmente não expõem o método — retorna erro e o
+/// frontend degrada o slider para "não suportado".
+#[cfg(windows)]
+mod brightness {
+    fn run(script: &str) -> Result<String, String> {
+        let out = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", script])
+            .output()
+            .map_err(|e| format!("powershell: {e}"))?;
+        if out.status.success() {
+            Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        } else {
+            Err(format!("wmi brilho: {}", String::from_utf8_lossy(&out.stderr)))
+        }
+    }
+
+    pub fn get() -> Result<u8, String> {
+        let text = run("(Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightness -ErrorAction Stop | Select-Object -First 1).CurrentBrightness")?;
+        text.parse::<u8>().map_err(|_| "nenhum monitor com controle de brilho".to_string())
+    }
+
+    pub fn set(level: u8) -> Result<(), String> {
+        run(&format!(
+            "$m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop | Select-Object -First 1; Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{{ Timeout = 0; Brightness = {level} }} -ErrorAction Stop | Out-Null"
+        ))?;
+        Ok(())
+    }
+}
+
+#[tauri::command]
+pub fn get_brightness() -> Result<u8, String> {
+    #[cfg(windows)]
+    {
+        brightness::get()
+    }
+    #[cfg(not(windows))]
+    {
+        Err("brilho só é suportado no Windows".into())
+    }
+}
+
+#[tauri::command]
+pub fn set_brightness(level: u8) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        brightness::set(level.min(100))
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = level;
+        Err("brilho só é suportado no Windows".into())
+    }
+}
+
+/* ------------------------- Safari: webview dedicada ------------------------ */
+
+/// Abre uma URL numa janela webview dedicada (navegação real, sem o limite de
+/// X-Frame-Options do iframe). Reutiliza a janela "browser" se já estiver aberta.
+#[tauri::command]
+pub fn open_browser(app: tauri::AppHandle, url: String, title: Option<String>) -> Result<(), String> {
+    use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+
+    let parsed = url::Url::parse(&url).map_err(|e| format!("URL inválida: {e}"))?;
+
+    // Reutiliza a janela se já existe — só navega para a nova URL.
+    if let Some(win) = app.get_webview_window("browser") {
+        let _ = win.eval(&format!("window.location.href = {}", serde_json::to_string(&url).unwrap()));
+        let _ = win.set_focus();
+        return Ok(());
+    }
+
+    WebviewWindowBuilder::new(&app, "browser", WebviewUrl::External(parsed))
+        .title(title.unwrap_or_else(|| "Safari".to_string()))
+        .inner_size(1080.0, 700.0)
+        .center()
+        .build()
+        .map_err(|e| format!("abrir navegador: {e}"))?;
+    Ok(())
+}
+
+/* --------------------------- volume (Core Audio) --------------------------- */
+
+#[cfg(windows)]
+mod volume {
+    use windows::core::Result;
+    use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
+    use windows::Win32::Media::Audio::{eConsole, eRender, IMMDeviceEnumerator, MMDeviceEnumerator};
+    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+
+    unsafe fn endpoint() -> Result<IAudioEndpointVolume> {
+        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)?;
+        let device = enumerator.GetDefaultAudioEndpoint(eRender, eConsole)?;
+        device.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None)
+    }
+
+    pub fn get() -> Result<u8> {
+        unsafe {
+            let ep = endpoint()?;
+            let v = ep.GetMasterVolumeLevelScalar()?;
+            Ok((v * 100.0).round() as u8)
+        }
+    }
+
+    pub fn set(level: u8) -> Result<()> {
+        unsafe {
+            let ep = endpoint()?;
+            ep.SetMasterVolumeLevelScalar(level.min(100) as f32 / 100.0, std::ptr::null())
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_volume() -> Result<u8, String> {
+    #[cfg(windows)]
+    {
+        volume::get().map_err(|e| format!("volume: {e}"))
+    }
+    #[cfg(not(windows))]
+    {
+        Err("volume só é suportado no Windows".into())
+    }
+}
+
+#[tauri::command]
+pub fn set_volume(level: u8) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        volume::set(level).map_err(|e| format!("volume: {e}"))
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = level;
+        Err("volume só é suportado no Windows".into())
+    }
+}

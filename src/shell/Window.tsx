@@ -102,7 +102,7 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
         width: bounds.w,
         height: bounds.h,
         zIndex: z,
-        borderRadius: 12,
+        borderRadius: 24, // Liquid Glass (Tahoe): raio de janela 24px
         pointerEvents: win.minimized ? "none" : "auto",
       }}
       onPointerDown={() => !focused && focusWin(win.id)}

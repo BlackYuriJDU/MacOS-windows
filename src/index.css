@@ -17,7 +17,21 @@
 
   --color-accent: #0a84ff;
   --ease-mac: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Liquid Glass (Tahoe): raio de janela 24px, confirmado por MacTahoe-gtk/kde */
+  --radius-window: 24px;
+  --radius-panel: 18px;
 }
+
+/* Accent colors do Tahoe — aplicados via [data-accent] no <html> */
+[data-accent="blue"]   { --color-accent: #0a84ff; }
+[data-accent="purple"] { --color-accent: #bf5af2; }
+[data-accent="pink"]   { --color-accent: #ff375f; }
+[data-accent="red"]    { --color-accent: #ff453a; }
+[data-accent="orange"] { --color-accent: #ff9f0a; }
+[data-accent="yellow"] { --color-accent: #ffd60a; }
+[data-accent="green"]  { --color-accent: #32d74b; }
+[data-accent="grey"]   { --color-accent: #98989d; }
 
 html,
 body,
@@ -27,6 +41,8 @@ body,
 
 body {
   @apply bg-black font-sans antialiased select-none overflow-hidden;
+  /* Cursor arredondado estilo Tahoe (SVG inline, arte própria) */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath d='M4 2 L4 15.5 L7.5 12.5 L9.5 17 L11.5 16 L9.5 11.5 L14 11.5 Z' fill='white' stroke='black' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, auto;
 }
 
 /* Vibrancy / painéis de vidro */
@@ -47,12 +63,23 @@ body {
   background: rgb(38 38 41 / 0.85);
 }
 
-/* Wallpapers em gradiente — recriação própria, zero assets da Apple */
+/* Wallpapers em gradiente — recriação própria, zero assets da Apple.
+   wp-0 = "Tahoe": ondas azuis fluidas inspiradas no wallpaper Liquid Glass do
+   macOS Tahoe (azul-ciano fluindo sobre base clara), em CSS puro. */
 .wp-0 {
   background:
-    radial-gradient(140% 110% at 78% 6%, #7fa7f8 0%, rgb(127 167 248 / 0) 55%),
-    radial-gradient(120% 90% at 10% 12%, #ffb199 0%, rgb(255 177 153 / 0) 50%),
-    linear-gradient(188deg, #23325c 0%, #5a4a8c 48%, #d4793f 100%);
+    radial-gradient(120% 90% at 82% 8%, rgb(190 226 255 / 0.9) 0%, rgb(190 226 255 / 0) 46%),
+    radial-gradient(150% 120% at 88% 88%, rgb(10 90 220 / 0.85) 0%, rgb(10 90 220 / 0) 55%),
+    radial-gradient(130% 110% at 12% 78%, rgb(60 150 250 / 0.75) 0%, rgb(60 150 250 / 0) 52%),
+    radial-gradient(100% 80% at 30% 18%, rgb(140 205 255 / 0.7) 0%, rgb(140 205 255 / 0) 48%),
+    linear-gradient(158deg, #d9ecff 0%, #8ec4fb 30%, #3f8ef0 58%, #0a4fc0 100%);
+}
+.wp-0-dark {
+  background:
+    radial-gradient(120% 90% at 82% 8%, rgb(40 90 170 / 0.6) 0%, rgb(40 90 170 / 0) 46%),
+    radial-gradient(150% 120% at 88% 88%, rgb(6 40 110 / 0.9) 0%, rgb(6 40 110 / 0) 55%),
+    radial-gradient(130% 110% at 12% 78%, rgb(20 70 160 / 0.7) 0%, rgb(20 70 160 / 0) 52%),
+    linear-gradient(158deg, #0a1830 0%, #0e2a55 34%, #123a78 62%, #071a40 100%);
 }
 .wp-1 {
   background:
