@@ -4,8 +4,10 @@ import type {
   FocusMode,
   FocusState,
   FsEntry,
+  InstalledApp,
   MachineInfo,
   ProcInfo,
+  StorePackage,
   TrashEntry,
 } from "./types";
 
@@ -129,4 +131,41 @@ export const ipc = {
     isTauri
       ? invoke<void>("open_browser", { url, title: title ?? null })
       : Promise.resolve(window.open(url, "_blank") as unknown as void),
+
+  /* ------------------------------ v0.3: app store ----------------------------- */
+
+  wingetAvailable: (): Promise<boolean> =>
+    isTauri ? invoke<boolean>("winget_available") : Promise.resolve(false),
+
+  storeSearch: (query: string): Promise<StorePackage[]> =>
+    isTauri
+      ? invoke<StorePackage[]>("store_search", { query })
+      : Promise.resolve([
+          { id: "Google.Chrome", name: "Google Chrome", version: "131.0" },
+          { id: "Mozilla.Firefox", name: "Mozilla Firefox", version: "133.0" },
+        ]),
+
+  storeInstall: (id: string): Promise<void> =>
+    isTauri ? invoke<void>("store_install", { id }) : new Promise((r) => setTimeout(r, 2000)),
+
+  listInstalledApps: (): Promise<InstalledApp[]> =>
+    isTauri
+      ? invoke<InstalledApp[]>("list_installed_apps")
+      : Promise.resolve([
+          { name: "Google Chrome", path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", publisher: "Google" },
+          { name: "Discord", path: "C:\\Users\\Arthur\\AppData\\Local\\Discord\\app.exe", publisher: "Discord" },
+        ]),
+
+  appIcon: (path: string): Promise<string | null> =>
+    isTauri ? invoke<string | null>("app_icon", { path }) : Promise.resolve(null),
+
+  launchApp: (path: string): Promise<void> =>
+    isTauri ? invoke<void>("launch_app", { path }) : Promise.resolve(),
+
+  /* ------------------------------ v0.3: downloads ----------------------------- */
+
+  downloadFile: (url: string): Promise<{ path: string; bytes: number }> =>
+    isTauri
+      ? invoke<{ path: string; bytes: number }>("download_file", { url })
+      : new Promise((r) => setTimeout(() => r({ path: "C:\\Users\\Arthur\\Downloads\\arquivo.bin", bytes: 1024 }), 1500)),
 };

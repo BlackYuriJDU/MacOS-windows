@@ -1,3 +1,5 @@
+mod appstore;
+mod downloads;
 mod focus;
 mod fs_cmds;
 mod sysinfo_cmds;
@@ -27,6 +29,9 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(global_shortcut)
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             fs_cmds::fs_list,
             fs_cmds::fs_read_text,
@@ -48,6 +53,13 @@ pub fn run() {
             trash::trash_list,
             trash::trash_move,
             trash::trash_empty,
+            appstore::winget_available,
+            appstore::store_search,
+            appstore::store_install,
+            appstore::list_installed_apps,
+            appstore::app_icon,
+            appstore::launch_app,
+            downloads::download_file,
         ])
         .build(tauri::generate_context!())
         .expect("erro ao construir a aplicação Tauri")

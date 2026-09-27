@@ -19,6 +19,8 @@ import Launchpad from "./shell/Launchpad";
 import ControlCenter from "./shell/ControlCenter";
 import LockScreen from "./shell/LockScreen";
 import ContextMenu from "./shell/ContextMenu";
+import NotificationBanner from "./shell/NotificationBanner";
+import NotificationCenter from "./shell/NotificationCenter";
 import { openApp } from "./apps/registry";
 
 export default function App() {
@@ -151,6 +153,8 @@ export default function App() {
           {launchpad && <Launchpad />}
           {controlCenter && <ControlCenter />}
           {locked && <LockScreen />}
+          <NotificationBanner />
+          <NotificationCenter />
         </>
       )}
       <ContextMenu />

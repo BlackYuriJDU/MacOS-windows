@@ -2,6 +2,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
+
+/// Handles de ProcessStateChange vivos nesta sessão (pid → state handle).
+/// Manter esses handles abertos mantém a suspensão; se o app morrer, o Windows
+/// retoma os processos sozinho (o handle cai a zero). Fechamos no focus_exit.
+#[cfg(windows)]
+static STATE_HANDLES: Mutex<Option<Vec<(u32, usize)>>> = Mutex::new(None);
 
 /// Info de um processo alvo do Modo Foco.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -26,6 +33,7 @@ mod nt {
 
     const PROCESS_SUSPEND_RESUME: u32 = 0x0800;
     const PROCESS_TERMINATE: u32 = 0x0001;
+    const PROCESS_SET_INFORMATION: u32 = 0x0200;
 
     #[link(name = "kernel32")]
     extern "system" {
@@ -40,7 +48,27 @@ mod nt {
     extern "system" {
         fn NtSuspendProcess(process: *mut c_void) -> i32;
         fn NtResumeProcess(process: *mut c_void) -> i32;
+        // ProcessStateChange (Windows 11+): a suspensão fica atrelada ao lifetime do
+        // state object — se o app morrer, o sistema retoma o processo automaticamente.
+        fn NtCreateProcessStateChange(
+            handle: *mut *mut c_void,
+            desired_access: u32,
+            object_attributes: *mut c_void,
+            process: *mut c_void,
+            reserved: u32,
+        ) -> i32;
+        fn NtChangeProcessState(
+            state_handle: *mut c_void,
+            process: *mut c_void,
+            state_change_type: u32,
+            extended_info: *mut c_void,
+            extended_info_len: usize,
+            reserved: u32,
+        ) -> i32;
     }
+
+    const PROCESS_STATE_SUSPEND: u32 = 1;
+    const PROCESS_STATE_RESUME: u32 = 2;
 
     pub fn suspend(pid: u32) -> bool {
         with_handle(pid, PROCESS_SUSPEND_RESUME, |h| unsafe {
@@ -52,6 +80,47 @@ mod nt {
         with_handle(pid, PROCESS_SUSPEND_RESUME, |h| unsafe {
             NtResumeProcess(h) >= 0
         })
+    }
+
+    /// Suspende via ProcessStateChange e devolve o handle do state object.
+    /// Manter esse handle aberto mantém a suspensão; se o app morrer, o Windows
+    /// retoma o processo sozinho (o handle cai a zero). Retorna null em falha.
+    pub fn suspend_stateful(pid: u32) -> *mut c_void {
+        let proc_h = unsafe { OpenProcess(PROCESS_SET_INFORMATION | PROCESS_SUSPEND_RESUME, 0, pid) };
+        if proc_h.is_null() {
+            return std::ptr::null_mut();
+        }
+        let mut state_h: *mut c_void = std::ptr::null_mut();
+        let created = unsafe {
+            NtCreateProcessStateChange(&mut state_h, 0x001F0001 /* PROCESS_STATE_ALL_ACCESS */, std::ptr::null_mut(), proc_h, 0)
+        };
+        if created < 0 || state_h.is_null() {
+            unsafe { CloseHandle(proc_h) };
+            return std::ptr::null_mut();
+        }
+        let changed = unsafe {
+            NtChangeProcessState(state_h, proc_h, PROCESS_STATE_SUSPEND, std::ptr::null_mut(), 0, 0)
+        };
+        unsafe { CloseHandle(proc_h) };
+        if changed < 0 {
+            unsafe { CloseHandle(state_h) };
+            return std::ptr::null_mut();
+        }
+        state_h
+    }
+
+    /// Retoma um processo suspenso via state object e fecha o handle.
+    pub fn resume_stateful(pid: u32, state_h: *mut c_void) -> bool {
+        if state_h.is_null() {
+            return false;
+        }
+        let proc_h = unsafe { OpenProcess(PROCESS_SUSPEND_RESUME, 0, pid) };
+        if !proc_h.is_null() {
+            unsafe { NtChangeProcessState(state_h, proc_h, PROCESS_STATE_RESUME, std::ptr::null_mut(), 0, 0) };
+            unsafe { CloseHandle(proc_h) };
+        }
+        unsafe { CloseHandle(state_h) };
+        true
     }
 
     pub fn terminate(pid: u32) -> bool {
@@ -71,10 +140,17 @@ mod nt {
 
 #[cfg(not(windows))]
 mod nt {
+    use core::ffi::c_void;
     pub fn suspend(_pid: u32) -> bool {
         false
     }
     pub fn resume(_pid: u32) -> bool {
+        false
+    }
+    pub fn suspend_stateful(_pid: u32) -> *mut c_void {
+        std::ptr::null_mut()
+    }
+    pub fn resume_stateful(_pid: u32, _h: *mut c_void) -> bool {
         false
     }
     pub fn terminate(_pid: u32) -> bool {
@@ -210,7 +286,32 @@ pub fn focus_enter(mode: String, pids: Option<Vec<u32>>) -> Result<FocusState, S
         None => all,
     };
     let affected: Vec<ProcInfo> = match mode.as_str() {
-        "suspend" => list.into_iter().filter(|p| nt::suspend(p.pid)).collect(),
+        "suspend" => {
+            #[cfg(windows)]
+            {
+                // Tenta ProcessStateChange (auto-retomada se o app morrer). Guarda os
+                // handles; processos em que falhar caem no fallback NtSuspendProcess.
+                let mut handles: Vec<(u32, usize)> = Vec::new();
+                let mut suspended: Vec<ProcInfo> = Vec::new();
+                for p in list {
+                    let h = nt::suspend_stateful(p.pid);
+                    if !h.is_null() {
+                        handles.push((p.pid, h as usize));
+                        suspended.push(p);
+                    } else if nt::suspend(p.pid) {
+                        suspended.push(p);
+                    }
+                }
+                if let Ok(mut guard) = STATE_HANDLES.lock() {
+                    *guard = Some(handles);
+                }
+                suspended
+            }
+            #[cfg(not(windows))]
+            {
+                list.into_iter().filter(|p| nt::suspend(p.pid)).collect()
+            }
+        }
         "terminate" => list.into_iter().filter(|p| nt::terminate(p.pid)).collect(),
         _ => Vec::new(),
     };
@@ -234,6 +335,17 @@ pub fn focus_enter(mode: String, pids: Option<Vec<u32>>) -> Result<FocusState, S
 
 #[tauri::command]
 pub fn focus_exit() -> Result<usize, String> {
+    // Retoma primeiro os que estão suspensos via ProcessStateChange (fecha os handles).
+    #[cfg(windows)]
+    {
+        if let Ok(mut guard) = STATE_HANDLES.lock() {
+            if let Some(handles) = guard.take() {
+                for (pid, h) in handles {
+                    nt::resume_stateful(pid, h as *mut core::ffi::c_void);
+                }
+            }
+        }
+    }
     resume_from_file()
 }
 

@@ -43,6 +43,18 @@ export interface TrashEntry {
   is_dir: boolean;
 }
 
+export interface InstalledApp {
+  name: string;
+  path: string;
+  publisher?: string | null;
+}
+
+export interface StorePackage {
+  id: string;
+  name: string;
+  version: string;
+}
+
 export interface MenuItem {
   label?: string;
   shortcut?: string;

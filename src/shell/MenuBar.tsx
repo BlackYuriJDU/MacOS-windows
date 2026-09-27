@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "../store/session";
 import { useSystem } from "../store/system";
 import { useOverlays } from "../store/ui";
+import { useNotifications } from "../store/notifications";
 import { useWindows, MENUBAR_H } from "../store/windows";
 import { sessionFlow } from "../lib/session-flow";
 import { buildMenus, openApp } from "../apps/registry";
+import { checkForUpdates } from "../lib/updater";
 import { formatMenubar, useClock } from "../hooks/useClock";
 import type { AppMenu, MenuItem } from "../lib/types";
 import { Logo } from "../components/Logo";
@@ -25,6 +27,8 @@ export default function MenuBar() {
   const [calOpen, setCalOpen] = useState(false);
   const [power, setPower] = useState<null | "restart" | "shutdown">(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const setNotifCenter = useNotifications((s) => s.setCenterOpen);
+  const notifCenterOpen = useNotifications((s) => s.centerOpen);
 
   const appMenus: AppMenu[] = buildMenus(activeAppId);
 
@@ -50,6 +54,7 @@ export default function MenuBar() {
     { label: "Sobre Este Mac", action: () => openApp("about") },
     { separator: true },
     { label: "Ajustes do Sistema…", shortcut: "⌘,", action: () => openApp("settings") },
+    { label: "Procurar Atualizações…", action: () => checkForUpdates() },
     { separator: true },
     { label: "Bloquear Tela", action: () => setLocked(true) },
     ...(focusActive
@@ -149,8 +154,9 @@ export default function MenuBar() {
           <Magnifier className="h-4 w-4" />
         </button>
         <button
-          onPointerDown={() => setCalOpen(!calOpen)}
-          className={`rounded px-2 py-1 tabular-nums hover:bg-black/10 dark:hover:bg-white/15 ${calOpen ? "bg-black/10 dark:bg-white/15" : ""}`}
+          onPointerDown={() => setNotifCenter(!notifCenterOpen)}
+          className={`rounded px-2 py-1 tabular-nums hover:bg-black/10 dark:hover:bg-white/15 ${notifCenterOpen ? "bg-black/10 dark:bg-white/15" : ""}`}
+          title="Central de Notificações"
         >
           {formatMenubar(now)}
         </button>

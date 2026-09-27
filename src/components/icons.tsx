@@ -203,6 +203,43 @@ export const FileGlyph: FC<P> = ({ className }) => (
   </svg>
 );
 
+/** Ícone do Campo Minado — bomba em tile vermelho (arte original). */
+export const MinesIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#e0245e" />
+    <circle cx="256" cy="286" r="118" fill="#1d1d1f" />
+    <rect x="240" y="120" width="32" height="60" rx="14" fill="#1d1d1f" />
+    <path d="M256 120 c0-40 40-52 64-40" stroke="#ffd60a" strokeWidth="20" fill="none" strokeLinecap="round" />
+    <circle cx="216" cy="256" r="22" fill="#fff" opacity="0.85" />
+  </svg>
+);
+
+/** Ícone da Cobrinha — serpente em tile verde (arte original). */
+export const SnakeIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#22c55e" />
+    <path d="M120 340 h180 a60 60 0 0 0 0-120 h-90 a40 40 0 0 1 0-80 h120" stroke="#fff" strokeWidth="34" fill="none" strokeLinecap="round" />
+    <circle cx="392" cy="180" r="26" fill="#ef4444" />
+  </svg>
+);
+
+/** Ícone da App Store — "A" estilizado em tile azul (arte original). */
+export const AppStoreIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <defs>
+      <linearGradient id="as-g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#3fb0ff" />
+        <stop offset="1" stopColor="#0a5cff" />
+      </linearGradient>
+    </defs>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#as-g)" />
+    <g stroke="#fff" strokeWidth="30" strokeLinecap="round" fill="none">
+      <path d="M168 356 L256 156 L344 356" />
+      <path d="M196 296 H316" />
+    </g>
+  </svg>
+);
+
 /** Ícone do Launchpad — grade 3x3 de tiles (arte original). */
 export const LaunchpadIcon: FC<P> = () => (
   <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>

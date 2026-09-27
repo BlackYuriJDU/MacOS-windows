@@ -3,7 +3,7 @@ import type { AppMenu, MenuItem } from "../lib/types";
 import { useWindows } from "../store/windows";
 import { useSession } from "../store/session";
 import { useOverlays } from "../store/ui";
-import { FinderIcon, NotesIcon, CalcIcon, SettingsIcon, TerminalIcon, AboutIcon, SafariIcon, TrashIcon } from "../components/icons";
+import { FinderIcon, NotesIcon, CalcIcon, SettingsIcon, TerminalIcon, AboutIcon, SafariIcon, TrashIcon, AppStoreIcon, MinesIcon, SnakeIcon } from "../components/icons";
 import Finder from "./finder/Finder";
 import Notes from "./notes/Notes";
 import Calculator from "./calculator/Calculator";
@@ -12,6 +12,9 @@ import Terminal from "./terminal/Terminal";
 import About from "./about/About";
 import Safari from "./safari/Safari";
 import Trash from "./trash/Trash";
+import AppStore from "./appstore/AppStore";
+import Minesweeper from "./games/Minesweeper";
+import Snake from "./games/Snake";
 
 export interface AppProps {
   winId: string;
@@ -30,10 +33,13 @@ export interface AppDef {
 
 export const APPS: AppDef[] = [
   { id: "finder", name: "Finder", icon: FinderIcon, component: Finder, defaultSize: { w: 860, h: 540 }, inDock: true },
+  { id: "appstore", name: "App Store", icon: AppStoreIcon, component: AppStore, defaultSize: { w: 920, h: 600 }, inDock: true },
   { id: "safari", name: "Safari", icon: SafariIcon, component: Safari, defaultSize: { w: 900, h: 600 }, inDock: true },
   { id: "notes", name: "Notas", icon: NotesIcon, component: Notes, defaultSize: { w: 660, h: 460 }, inDock: true },
   { id: "calculator", name: "Calculadora", icon: CalcIcon, component: Calculator, defaultSize: { w: 260, h: 380 }, inDock: true },
   { id: "terminal", name: "Terminal", icon: TerminalIcon, component: Terminal, defaultSize: { w: 620, h: 420 }, inDock: true },
+  { id: "minesweeper", name: "Campo Minado", icon: MinesIcon, component: Minesweeper, defaultSize: { w: 380, h: 520 }, inDock: false },
+  { id: "snake", name: "Cobrinha", icon: SnakeIcon, component: Snake, defaultSize: { w: 420, h: 520 }, inDock: false },
   { id: "settings", name: "Ajustes do Sistema", icon: SettingsIcon, component: Settings, defaultSize: { w: 740, h: 500 }, inDock: true },
   { id: "about", name: "Sobre", icon: AboutIcon, component: About, defaultSize: { w: 480, h: 560 }, inDock: false },
   { id: "trash", name: "Lixeira", icon: TrashIcon, component: Trash, defaultSize: { w: 560, h: 380 }, inDock: false },

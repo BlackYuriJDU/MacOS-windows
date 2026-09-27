@@ -1,7 +1,7 @@
 {
   "name": "macos-windows",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,10 @@
     "@fontsource-variable/inter": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
     "@tauri-apps/api": "^2.1.0",
+    "@tauri-apps/plugin-opener": "^2.6.0",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.13.0",
+    "@tauri-apps/plugin-upload": "^2.5.0",
     "framer-motion": "^11.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
