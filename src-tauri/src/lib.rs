@@ -2,6 +2,7 @@ mod appstore;
 mod downloads;
 mod focus;
 mod fs_cmds;
+mod proc;
 mod sysinfo_cmds;
 mod trash;
 

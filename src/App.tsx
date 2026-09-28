@@ -9,7 +9,7 @@ import { useOverlays, useContextMenu } from "./store/ui";
 import { ipc } from "./lib/ipc";
 import { sessionFlow } from "./lib/session-flow";
 import BootScreen from "./shell/BootScreen";
-import ConfirmFocus from "./shell/ConfirmFocus";
+import LoginScreen from "./shell/LoginScreen";
 import MenuBar from "./shell/MenuBar";
 import Desktop from "./shell/Desktop";
 import WindowManager from "./shell/WindowManager";
@@ -21,6 +21,7 @@ import LockScreen from "./shell/LockScreen";
 import ContextMenu from "./shell/ContextMenu";
 import NotificationBanner from "./shell/NotificationBanner";
 import NotificationCenter from "./shell/NotificationCenter";
+import DownloadProgressBanner from "./shell/DownloadProgressBanner";
 import { openApp } from "./apps/registry";
 
 export default function App() {
@@ -143,7 +144,7 @@ export default function App() {
   return (
     <div className="mac-cursor fixed inset-0 overflow-hidden bg-black">
       {phase === "boot" && <BootScreen />}
-      {phase === "confirm" && <ConfirmFocus />}
+      {phase === "login" && <LoginScreen />}
       {phase === "desktop" && (
         <>
           <Desktop />
@@ -155,6 +156,7 @@ export default function App() {
           {controlCenter && <ControlCenter />}
           <NotificationBanner />
           {notifCenter && <NotificationCenter />}
+          <DownloadProgressBanner />
           {locked && <LockScreen />}
         </>
       )}

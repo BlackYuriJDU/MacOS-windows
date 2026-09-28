@@ -33,3 +33,31 @@ export const useNotifications = create<NotifState>((set) => ({
 export function notify(appId: string, appName: string, title: string, body: string) {
   useNotifications.getState().push({ appId, appName, title, body });
 }
+
+/* ------------------------------------------------------------------ */
+/* Progresso de download (atualização do app / downloads grandes).     */
+/* Dirige a barra com "%" que aparece como banner persistente.         */
+/* ------------------------------------------------------------------ */
+
+export interface DownloadProgress {
+  active: boolean;
+  label: string;
+  downloaded: number; // bytes
+  total: number; // bytes (0 = indeterminado)
+}
+
+interface ProgressState extends DownloadProgress {
+  start: (label: string) => void;
+  update: (downloaded: number, total: number) => void;
+  finish: () => void;
+}
+
+export const useDownloadProgress = create<ProgressState>((set) => ({
+  active: false,
+  label: "",
+  downloaded: 0,
+  total: 0,
+  start: (label) => set({ active: true, label, downloaded: 0, total: 0 }),
+  update: (downloaded, total) => set({ downloaded, total }),
+  finish: () => set({ active: false, downloaded: 0, total: 0 }),
+}));

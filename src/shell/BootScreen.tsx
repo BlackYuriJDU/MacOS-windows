@@ -18,7 +18,7 @@ export default function BootScreen() {
           initial={{ width: "0%" }}
           animate={{ width: "100%" }}
           transition={{ duration: 2.4, ease: "easeInOut" }}
-          onAnimationComplete={() => setPhase("confirm")}
+          onAnimationComplete={() => setPhase("login")}
         />
       </div>
     </motion.div>

@@ -71,23 +71,25 @@ body {
   background: rgb(38 38 41 / 0.85);
 }
 
-/* Wallpapers em gradiente — recriação própria, zero assets da Apple.
-   wp-0 = "Tahoe": ondas azuis fluidas inspiradas no wallpaper Liquid Glass do
-   macOS Tahoe (azul-ciano fluindo sobre base clara), em CSS puro. */
+/* Wallpapers — wp-0/wp-0-dark usam as imagens oficiais do macOS Tahoe
+   (public/wallpapers), com um gradiente de fallback enquanto a imagem carrega. */
 .wp-0 {
-  background:
-    radial-gradient(120% 90% at 82% 8%, rgb(190 226 255 / 0.9) 0%, rgb(190 226 255 / 0) 46%),
-    radial-gradient(150% 120% at 88% 88%, rgb(10 90 220 / 0.85) 0%, rgb(10 90 220 / 0) 55%),
-    radial-gradient(130% 110% at 12% 78%, rgb(60 150 250 / 0.75) 0%, rgb(60 150 250 / 0) 52%),
-    radial-gradient(100% 80% at 30% 18%, rgb(140 205 255 / 0.7) 0%, rgb(140 205 255 / 0) 48%),
+  background-color: #3f8ef0;
+  background-image:
+    url("/wallpapers/tahoe-light.jpg"),
     linear-gradient(158deg, #d9ecff 0%, #8ec4fb 30%, #3f8ef0 58%, #0a4fc0 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 .wp-0-dark {
-  background:
-    radial-gradient(120% 90% at 82% 8%, rgb(40 90 170 / 0.6) 0%, rgb(40 90 170 / 0) 46%),
-    radial-gradient(150% 120% at 88% 88%, rgb(6 40 110 / 0.9) 0%, rgb(6 40 110 / 0) 55%),
-    radial-gradient(130% 110% at 12% 78%, rgb(20 70 160 / 0.7) 0%, rgb(20 70 160 / 0) 52%),
+  background-color: #0a1830;
+  background-image:
+    url("/wallpapers/tahoe-dark.jpg"),
     linear-gradient(158deg, #0a1830 0%, #0e2a55 34%, #123a78 62%, #071a40 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 .wp-1 {
   background:

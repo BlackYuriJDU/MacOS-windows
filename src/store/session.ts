@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { FocusMode } from "../lib/types";
 
-export type Phase = "boot" | "confirm" | "desktop";
+export type Phase = "boot" | "login" | "confirm" | "desktop";
 
 interface SessionState {
   phase: Phase;

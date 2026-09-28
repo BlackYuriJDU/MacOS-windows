@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
+use crate::proc::hidden_command;
+
 /// App instalado no Windows (aba "Instalados").
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstalledApp {
@@ -19,7 +21,7 @@ pub struct StoreResult {
 }
 
 fn ps(script: &str) -> Result<String, String> {
-    let out = Command::new("powershell")
+    let out = hidden_command("powershell")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()
         .map_err(|e| format!("powershell: {e}"))?;
@@ -32,7 +34,7 @@ fn ps(script: &str) -> Result<String, String> {
 
 #[tauri::command]
 pub fn winget_available() -> bool {
-    Command::new("winget")
+    hidden_command("winget")
         .arg("--version")
         .output()
         .map(|o| o.status.success())
@@ -86,7 +88,7 @@ pub fn store_search(query: String) -> Result<Vec<StoreResult>, String> {
     );
     // winget não tem saída JSON nativa estável; parse da tabela é frágil.
     // Usamos uma abordagem mais robusta: winget search com colunas fixas.
-    let out = Command::new("winget")
+    let out = hidden_command("winget")
         .args(["search", "--query", &query, "--source", "winget", "--accept-source-agreements", "--disable-interactivity"])
         .output()
         .map_err(|e| format!("winget: {e}"))?;
@@ -131,7 +133,7 @@ pub fn store_install(id: String) -> Result<String, String> {
     if !is_winget() {
         return Err("winget não está instalado.".into());
     }
-    let out = Command::new("winget")
+    let out = hidden_command("winget")
         .args([
             "install", "--id", &id, "-e", "--silent",
             "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity",
@@ -149,7 +151,7 @@ pub fn store_install(id: String) -> Result<String, String> {
 /// Desinstala um app pelo id winget.
 #[tauri::command]
 pub fn store_uninstall(id: String) -> Result<String, String> {
-    let out = Command::new("winget")
+    let out = hidden_command("winget")
         .args(["uninstall", "--id", &id, "-e", "--silent", "--disable-interactivity"])
         .output()
         .map_err(|e| format!("winget uninstall: {e}"))?;
@@ -208,7 +210,7 @@ pub fn app_icon(path: String) -> Result<Option<String>, String> {
          $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); \
          [Convert]::ToBase64String($ms.ToArray())"
     );
-    let out = Command::new("powershell")
+    let out = hidden_command("powershell")
         .args(["-NoProfile", "-NonInteractive", "-Command", &script])
         .output()
         .map_err(|e| format!("icon: {e}"))?;

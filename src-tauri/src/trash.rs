@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::proc::hidden_command;
+
 /// Entrada da Lixeira do Windows.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TrashEntry {
@@ -33,7 +35,7 @@ foreach ($item in $bin.Items()) {
 }
 $items | ConvertTo-Json -Compress
 "#;
-    let out = std::process::Command::new("powershell")
+    let out = hidden_command("powershell")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()
         .map_err(|e| format!("powershell: {e}"))?;
@@ -71,7 +73,7 @@ pub fn trash_move(path: String) -> Result<(), String> {
         let script = format!(
             "Add-Type -AssemblyName Microsoft.VisualBasic; {op}"
         );
-        let out = std::process::Command::new("powershell")
+        let out = hidden_command("powershell")
             .args(["-NoProfile", "-NonInteractive", "-Command", &script])
             .output()
             .map_err(|e| format!("powershell: {e}"))?;
@@ -96,7 +98,7 @@ pub fn trash_move(path: String) -> Result<(), String> {
 pub fn trash_empty() -> Result<(), String> {
     #[cfg(windows)]
     {
-        let out = std::process::Command::new("powershell")
+        let out = hidden_command("powershell")
             .args(["-NoProfile", "-NonInteractive", "-Command", "Clear-RecycleBin -Force -ErrorAction Stop"])
             .output()
             .map_err(|e| format!("powershell: {e}"))?;

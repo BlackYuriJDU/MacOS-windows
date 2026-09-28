@@ -52,11 +52,20 @@ export default function Safari() {
     return () => un?.();
   }, []);
 
+  /* Navegação real: abre a URL numa webview nativa dedicada (sem o limite de
+     X-Frame-Options do iframe). No Tauri, usa o comando open_browser; no
+     navegador (dev), abre numa nova aba do navegador. */
+  const navigate = (url: string) => {
+    ipc.openBrowser(url, "Safari").catch((e) => console.error("abrir navegador:", e));
+  };
+
   const openTab = (url: string) => {
-    const t: Tab = { id: nextTab++, url: normalize(url), title: "Carregando…" };
+    const target = normalize(url);
+    const t: Tab = { id: nextTab++, url: target, title: target.replace(/^https?:\/\//, "").split("/")[0] };
     setTabs((ts) => [...ts, t]);
     setActive(t.id);
     setAddress(t.url);
+    navigate(target);
   };
 
   const go = (u?: string) => {
@@ -65,6 +74,7 @@ export default function Safari() {
     if (activeTab) {
       setTabs((ts) => ts.map((t) => (t.id === activeTab.id ? { ...t, url: target } : t)));
       setAddress(target);
+      navigate(target);
     } else {
       openTab(target);
     }
@@ -208,14 +218,34 @@ export default function Safari() {
           </div>
         </div>
       ) : (
-        <iframe
-          key={activeTab.id + activeTab.url}
-          src={activeTab.url}
-          title="Safari"
-          className="min-h-0 flex-1 border-0 bg-white"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
-        />
+        /* A página abre numa janela de navegador nativa (webview dedicada), sem o
+           limite de X-Frame-Options que quebrava o iframe. Aqui mostramos o estado
+           da aba e um atalho para trazer a janela de volta. */
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#eaf4ff] to-white p-6 dark:from-[#101a2c] dark:to-[#1c1c1e]">
+          <GlobeIcon />
+          <p className="max-w-md truncate text-[14px] font-semibold text-black dark:text-white">
+            {activeTab.url.replace(/^https?:\/\//, "")}
+          </p>
+          <p className="max-w-90 text-center text-[12px] leading-relaxed text-black/60 dark:text-white/60">
+            Esta página está aberta na janela do navegador. Trocar de aba ou digitar um novo endereço navega nela.
+          </p>
+          <button
+            onClick={() => navigate(activeTab.url)}
+            className="rounded-full bg-accent px-5 py-2 text-[13px] font-semibold text-white shadow-lg shadow-accent/30 transition active:scale-[0.98]"
+          >
+            Trazer janela do navegador
+          </button>
+        </div>
       )}
     </div>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-14 w-14 text-accent" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9S14.5 18.4 12 21c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z" />
+    </svg>
   );
 }

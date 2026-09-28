@@ -8,13 +8,14 @@ export default function WindowManager() {
 
   return (
     <div className="pointer-events-none absolute inset-0">
-      {windows.map((w, i) => (
-        <div key={w.id} className="pointer-events-auto contents">
-          <AnimatePresence>
-            <Window win={w} focused={w.id === focusedId} z={10 + i} />
-          </AnimatePresence>
-        </div>
-      ))}
+      {/* Um único AnimatePresence envolvendo TODA a lista: sem isso cada
+          AnimatePresence via apenas um filho e a animação de exit (fechar)
+          nunca disparava — a janela sumia instantaneamente e travava a UI. */}
+      <AnimatePresence>
+        {windows.map((w, i) => (
+          <Window key={w.id} win={w} focused={w.id === focusedId} z={10 + i} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

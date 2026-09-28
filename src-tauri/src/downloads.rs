@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::path::PathBuf;
 
+use crate::proc::hidden_command;
+
 /// Download real de um arquivo para a pasta Downloads do Windows, via PowerShell.
 /// Evita a dependência nativa de TLS (ring/clang) — funciona em qualquer Windows.
 /// Grava em `<nome>.download` e renomeia ao concluir (download atômico).
@@ -52,7 +54,7 @@ pub fn download_file(app: tauri::AppHandle, url: String) -> Result<DownloadResul
          (Get-Item '{tmp_e}').Length"
     );
 
-    let out = std::process::Command::new("powershell")
+    let out = hidden_command("powershell")
         .args(["-NoProfile", "-NonInteractive", "-Command", &script])
         .output()
         .map_err(|e| format!("powershell: {e}"))?;

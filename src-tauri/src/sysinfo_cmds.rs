@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::proc::hidden_command;
+
 #[derive(Serialize)]
 pub struct MachineInfo {
     pub os_name: String,
@@ -91,7 +93,7 @@ pub fn battery_status() -> Result<Option<BatteryInfo>, String> {
 
 #[tauri::command]
 pub fn wifi_ssid() -> Result<Option<String>, String> {
-    let out = std::process::Command::new("netsh")
+    let out = hidden_command("netsh")
         .args(["wlan", "show", "interfaces"])
         .output()
         .map_err(|e| e.to_string())?;
@@ -129,8 +131,10 @@ pub fn restart_app(app: tauri::AppHandle) {
 /// frontend degrada o slider para "não suportado".
 #[cfg(windows)]
 mod brightness {
+    use crate::proc::hidden_command;
+
     fn run(script: &str) -> Result<String, String> {
-        let out = std::process::Command::new("powershell")
+        let out = hidden_command("powershell")
             .args(["-NoProfile", "-NonInteractive", "-Command", script])
             .output()
             .map_err(|e| format!("powershell: {e}"))?;

@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, type TargetAndTransition } from "framer-motion";
 import type { WinState } from "../store/windows";
 import { useWindows, MENUBAR_H } from "../store/windows";
 import { getApp } from "../apps/registry";
@@ -7,6 +7,13 @@ import { DOCK_RESERVED } from "./Dock";
 
 const MIN_W = 320;
 const MIN_H = 200;
+
+/** Curva de easing do macOS (suave, sem overshoot). */
+const MAC_EASE = [0.32, 0.72, 0, 1] as const;
+
+/** Distância (px) que a janela desce em direção ao Dock ao minimizar. */
+const minimizeTravel = () =>
+  typeof window === "undefined" ? 400 : Math.max(220, window.innerHeight * 0.45);
 
 const CURSORS: Record<string, string> = {
   n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize",
@@ -21,6 +28,15 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
   const minimizeWin = useWindows((s) => s.minimize);
   const toggleMax = useWindows((s) => s.toggleMaximize);
   const dragMeta = useRef<{ sx: number; sy: number; x: number; y: number } | null>(null);
+  const [interacting, setInteracting] = useState(false);
+
+  // Segurança: se o ponteiro for solto fora da janela, reativa a transição.
+  useEffect(() => {
+    if (!interacting) return;
+    const up = () => setInteracting(false);
+    window.addEventListener("pointerup", up);
+    return () => window.removeEventListener("pointerup", up);
+  }, [interacting]);
 
   if (!app) return null;
 
@@ -32,6 +48,7 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
   const onTitlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 || win.maximized) return;
     focusWin(win.id);
+    setInteracting(true);
     dragMeta.current = { sx: e.clientX, sy: e.clientY, x: bounds.x, y: bounds.y };
     const move = (ev: PointerEvent) => {
       const d = dragMeta.current;
@@ -43,6 +60,7 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
     };
     const up = () => {
       dragMeta.current = null;
+      setInteracting(false);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
@@ -54,6 +72,7 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
     if (e.button !== 0 || win.maximized) return;
     e.stopPropagation();
     focusWin(win.id);
+    setInteracting(true);
     const start = { mx: e.clientX, my: e.clientY, ...bounds };
     const move = (ev: PointerEvent) => {
       const dx = ev.clientX - start.mx;
@@ -74,6 +93,7 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
       setBounds(win.id, b);
     };
     const up = () => {
+      setInteracting(false);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
@@ -83,16 +103,35 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
 
   const AppBody = app.component;
 
+  /* Estado animado atual: minimizado encolhe e desce em direção ao Dock
+     (aproximação do "Scale effect" do macOS — o Genie real é um mesh warp
+     que não reproduzimos); normal fica em escala/posição plenas. */
+  const animState: TargetAndTransition = win.minimized
+    ? {
+        opacity: 0,
+        scale: 0.35,
+        y: minimizeTravel(),
+        transition: { duration: 0.4, ease: MAC_EASE },
+      }
+    : {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: { duration: 0.35, ease: MAC_EASE },
+      };
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={
-        win.minimized
-          ? { opacity: 0, scale: 0.5, y: "45%" }
-          : { opacity: 1, scale: 1, y: 0 }
-      }
-      exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.14 } }}
-      transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+      /* Abrir: nasce crescendo suavemente (scale 0.7→1 + fade + leve subida) */
+      initial={{ opacity: 0, scale: 0.7, y: 24 }}
+      animate={animState}
+      /* Fechar: encolhe e some, rápido (~0.15s) */
+      exit={{
+        opacity: 0,
+        scale: 0.85,
+        y: 8,
+        transition: { duration: 0.15, ease: "easeIn" },
+      }}
       className={`absolute flex flex-col overflow-hidden bg-white dark:bg-[#232326] ${
         focused ? "win-shadow-focus" : "win-shadow-blur"
       }`}
@@ -104,6 +143,12 @@ export default function Window({ win, focused, z }: { win: WinState; focused: bo
         zIndex: z,
         borderRadius: 24, // Liquid Glass (Tahoe): raio de janela 24px
         pointerEvents: win.minimized ? "none" : "auto",
+        // Maximizar/restaurar: transição suave de tamanho/posição via CSS
+        // (barato; transform/opacity continuam no framer-motion via GPU).
+        // Desativada durante drag/resize para a janela não "atrásar" o mouse.
+        transition: interacting
+          ? "none"
+          : "left 0.25s cubic-bezier(0.32, 0.72, 0, 1), top 0.25s cubic-bezier(0.32, 0.72, 0, 1), width 0.25s cubic-bezier(0.32, 0.72, 0, 1), height 0.25s cubic-bezier(0.32, 0.72, 0, 1)",
       }}
       onPointerDown={() => !focused && focusWin(win.id)}
     >
