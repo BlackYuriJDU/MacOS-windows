@@ -141,7 +141,7 @@ export default function App() {
   }, [phase]);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black">
+    <div className="mac-cursor fixed inset-0 overflow-hidden bg-black">
       {phase === "boot" && <BootScreen />}
       {phase === "confirm" && <ConfirmFocus />}
       {phase === "desktop" && (
@@ -156,8 +156,6 @@ export default function App() {
           <NotificationBanner />
           {notifCenter && <NotificationCenter />}
           {locked && <LockScreen />}
-          <NotificationBanner />
-          <NotificationCenter />
         </>
       )}
       <ContextMenu />
