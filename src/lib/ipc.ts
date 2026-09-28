@@ -152,15 +152,15 @@ export const ipc = {
     isTauri
       ? invoke<InstalledApp[]>("list_installed_apps")
       : Promise.resolve([
-          { name: "Google Chrome", path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", publisher: "Google" },
-          { name: "Discord", path: "C:\\Users\\Arthur\\AppData\\Local\\Discord\\app.exe", publisher: "Discord" },
+          { name: "Google Chrome", id: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", publisher: "Google", is_uwp: false },
+          { name: "Discord", id: "C:\\Users\\Arthur\\AppData\\Local\\Discord\\app.exe", publisher: "Discord", is_uwp: false },
         ]),
 
   appIcon: (path: string): Promise<string | null> =>
     isTauri ? invoke<string | null>("app_icon", { path }) : Promise.resolve(null),
 
-  launchApp: (path: string): Promise<void> =>
-    isTauri ? invoke<void>("launch_app", { path }) : Promise.resolve(),
+  launchApp: (id: string, isUwp: boolean): Promise<void> =>
+    isTauri ? invoke<void>("launch_app", { id, isUwp }) : Promise.resolve(),
 
   /* ------------------------------ v0.3: downloads ----------------------------- */
 
@@ -168,4 +168,16 @@ export const ipc = {
     isTauri
       ? invoke<{ path: string; bytes: number }>("download_file", { url })
       : new Promise((r) => setTimeout(() => r({ path: "C:\\Users\\Arthur\\Downloads\\arquivo.bin", bytes: 1024 }), 1500)),
+
+  /** Abre um arquivo/pasta com o app padrão do Windows (plugin-opener). */
+  openPath: (path: string): Promise<void> =>
+    isTauri
+      ? import("@tauri-apps/plugin-opener").then((m) => m.openPath(path))
+      : Promise.resolve(),
+
+  /** Revela um arquivo no Explorador de Arquivos. */
+  revealItem: (path: string): Promise<void> =>
+    isTauri
+      ? import("@tauri-apps/plugin-opener").then((m) => m.revealItemInDir(path))
+      : Promise.resolve(),
 };

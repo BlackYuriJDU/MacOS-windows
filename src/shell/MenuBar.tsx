@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "../store/session";
 import { useSystem } from "../store/system";
 import { useOverlays } from "../store/ui";
-import { useNotifications } from "../store/notifications";
 import { useWindows, MENUBAR_H } from "../store/windows";
 import { sessionFlow } from "../lib/session-flow";
-import { buildMenus, openApp } from "../apps/registry";
 import { checkForUpdates } from "../lib/updater";
+import { buildMenus, openApp } from "../apps/registry";
 import { formatMenubar, useClock } from "../hooks/useClock";
 import type { AppMenu, MenuItem } from "../lib/types";
 import { Logo } from "../components/Logo";
@@ -20,6 +19,8 @@ export default function MenuBar() {
   const setSpotlight = useOverlays((s) => s.setSpotlight);
   const setControlCenter = useOverlays((s) => s.setControlCenter);
   const controlCenterOpen = useOverlays((s) => s.controlCenter);
+  const setNotifCenter = useOverlays((s) => s.setNotifCenter);
+  const notifCenterOpen = useOverlays((s) => s.notifCenter);
   const focusActive = useSession((s) => s.focusActive);
   const setLocked = useSession((s) => s.setLocked);
   const activeAppId = useWindows((s) => s.focused()?.appId) ?? "finder";
@@ -27,8 +28,6 @@ export default function MenuBar() {
   const [calOpen, setCalOpen] = useState(false);
   const [power, setPower] = useState<null | "restart" | "shutdown">(null);
   const barRef = useRef<HTMLDivElement>(null);
-  const setNotifCenter = useNotifications((s) => s.setCenterOpen);
-  const notifCenterOpen = useNotifications((s) => s.centerOpen);
 
   const appMenus: AppMenu[] = buildMenus(activeAppId);
 

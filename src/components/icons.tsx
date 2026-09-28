@@ -203,40 +203,64 @@ export const FileGlyph: FC<P> = ({ className }) => (
   </svg>
 );
 
-/** Ícone do Campo Minado — bomba em tile vermelho (arte original). */
-export const MinesIcon: FC<P> = () => (
-  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
-    <rect x="16" y="16" width="480" height="480" rx="108" fill="#e0245e" />
-    <circle cx="256" cy="286" r="118" fill="#1d1d1f" />
-    <rect x="240" y="120" width="32" height="60" rx="14" fill="#1d1d1f" />
-    <path d="M256 120 c0-40 40-52 64-40" stroke="#ffd60a" strokeWidth="20" fill="none" strokeLinecap="round" />
-    <circle cx="216" cy="256" r="22" fill="#fff" opacity="0.85" />
-  </svg>
-);
-
-/** Ícone da Cobrinha — serpente em tile verde (arte original). */
-export const SnakeIcon: FC<P> = () => (
-  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
-    <rect x="16" y="16" width="480" height="480" rx="108" fill="#22c55e" />
-    <path d="M120 340 h180 a60 60 0 0 0 0-120 h-90 a40 40 0 0 1 0-80 h120" stroke="#fff" strokeWidth="34" fill="none" strokeLinecap="round" />
-    <circle cx="392" cy="180" r="26" fill="#ef4444" />
-  </svg>
-);
-
-/** Ícone da App Store — "A" estilizado em tile azul (arte original). */
+/** App Store — "A" estilizado (arte original). */
 export const AppStoreIcon: FC<P> = () => (
   <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
     <defs>
       <linearGradient id="as-g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#3fb0ff" />
+        <stop offset="0" stopColor="#1fb6ff" />
         <stop offset="1" stopColor="#0a5cff" />
       </linearGradient>
     </defs>
     <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#as-g)" />
-    <g stroke="#fff" strokeWidth="30" strokeLinecap="round" fill="none">
-      <path d="M168 356 L256 156 L344 356" />
-      <path d="M196 296 H316" />
+    <g stroke="#fff" strokeWidth="34" strokeLinecap="round" fill="none">
+      <path d="M168 360 L256 152 L344 360" />
+      <path d="M196 300 H316" />
     </g>
+  </svg>
+);
+
+/** Jogos — controle (arte original). */
+export const GamesIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <defs>
+      <linearGradient id="gm-g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#ff9f0a" />
+        <stop offset="1" stopColor="#ff375f" />
+      </linearGradient>
+    </defs>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#gm-g)" />
+    <g fill="#fff">
+      <rect x="150" y="226" width="212" height="60" rx="30" />
+      <rect x="226" y="150" width="60" height="212" rx="30" />
+    </g>
+    <circle cx="356" cy="196" r="22" fill="#fff" opacity="0.9" />
+    <circle cx="386" cy="236" r="22" fill="#fff" opacity="0.7" />
+  </svg>
+);
+
+/** Campo Minado — bomba (arte original). */
+export const MinesIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#3a3a3c" />
+    <circle cx="256" cy="286" r="120" fill="#1c1c1e" />
+    <g stroke="#1c1c1e" strokeWidth="26" strokeLinecap="round">
+      <path d="M256 130v40M150 200l30 30M362 200l-30 30M150 372l30-30M362 372l-30-30" />
+    </g>
+    <rect x="236" y="120" width="40" height="60" rx="12" fill="#1c1c1e" />
+    <path d="M276 120 q40 -30 70 6" stroke="#ff9f0a" strokeWidth="16" fill="none" strokeLinecap="round" />
+    <circle cx="352" cy="120" r="16" fill="#ffd60a" />
+  </svg>
+);
+
+/** Cobrinha (arte original). */
+export const SnakeIcon: FC<P> = () => (
+  <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#0b3d1e" />
+    <path d="M120 360 q0 -60 60 -60 h100 q60 0 60 -60 v-40 q0 -60 60 -60" stroke="#32d74b" strokeWidth="44" fill="none" strokeLinecap="round" />
+    <circle cx="410" cy="140" r="34" fill="#32d74b" />
+    <circle cx="420" cy="132" r="8" fill="#0b3d1e" />
+    <circle cx="150" cy="360" r="20" fill="#ff453a" />
   </svg>
 );
 

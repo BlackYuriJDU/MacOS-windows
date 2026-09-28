@@ -170,7 +170,7 @@ export default function Settings({ props: p }: { props?: Record<string, unknown>
             <div className="flex flex-col items-center gap-2 py-4">
               <Logo size={72} />
               <p className="text-[15px] font-semibold">Mac OS</p>
-              <p className="text-[12px] opacity-60">Versão 0.2.0 (Tahoe)</p>
+              <p className="text-[12px] opacity-60">Versão 0.3.0 (App Store)</p>
               <p className="max-w-72 text-center text-[11.5px] leading-relaxed opacity-50">
                 Projeto de fã, sem qualquer afiliação com a Apple. macOS é marca registrada da Apple Inc. Todos os
                 visuais foram recriados — nenhum asset da Apple é distribuído.

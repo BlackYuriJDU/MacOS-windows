@@ -1,143 +1,119 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-const ROWS = 9;
-const COLS = 9;
-const MINES = 10;
+const ROWS = 9, COLS = 9, MINES = 10;
+type Cell = { mine: boolean; open: boolean; flag: boolean; n: number };
 
-type Cell = { mine: boolean; open: boolean; flag: boolean; adj: number };
-
-function emptyBoard(): Cell[][] {
-  return Array.from({ length: ROWS }, () =>
-    Array.from({ length: COLS }, () => ({ mine: false, open: false, flag: false, adj: 0 }))
+function build(): Cell[][] {
+  const g: Cell[][] = Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => ({ mine: false, open: false, flag: false, n: 0 }))
   );
-}
-
-function plant(board: Cell[][], safeR: number, safeC: number): Cell[][] {
-  const b = board.map((r) => r.map((c) => ({ ...c })));
   let placed = 0;
   while (placed < MINES) {
-    const r = Math.floor(Math.random() * ROWS);
-    const c = Math.floor(Math.random() * COLS);
-    if (b[r][c].mine || (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1)) continue;
-    b[r][c].mine = true;
-    placed++;
+    const r = Math.floor(Math.random() * ROWS), c = Math.floor(Math.random() * COLS);
+    if (!g[r][c].mine) { g[r][c].mine = true; placed++; }
   }
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++) {
-      if (b[r][c].mine) continue;
-      let n = 0;
-      for (let dr = -1; dr <= 1; dr++)
-        for (let dc = -1; dc <= 1; dc++) {
-          const nr = r + dr, nc = c + dc;
-          if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && b[nr][nc].mine) n++;
-        }
-      b[r][c].adj = n;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (g[r][c].mine) continue;
+    let n = 0;
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && g[nr][nc].mine) n++;
     }
-  return b;
+    g[r][c].n = n;
+  }
+  return g;
 }
 
-const NUM_COLORS = ["", "#2563eb", "#16a34a", "#dc2626", "#7c3aed", "#b45309", "#0891b2", "#111", "#666"];
+const NUM_COLORS = ["", "#0a84ff", "#32d74b", "#ff453a", "#5e5ce6", "#ff9f0a", "#64d2ff", "#bf5af2", "#ff375f"];
 
 export default function Minesweeper() {
-  const [board, setBoard] = useState<Cell[][]>(emptyBoard);
-  const [started, setStarted] = useState(false);
-  const [dead, setDead] = useState(false);
-  const [won, setWon] = useState(false);
+  const [grid, setGrid] = useState<Cell[][]>(build);
+  const [state, setState] = useState<"playing" | "won" | "lost">("playing");
+  const [flags, setFlags] = useState(0);
+  const [time, setTime] = useState(0);
 
-  const flags = board.flat().filter((c) => c.flag).length;
+  useEffect(() => {
+    if (state !== "playing") return;
+    const t = setInterval(() => setTime((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [state]);
 
-  const checkWin = useCallback((b: Cell[][]) => {
-    const allOpen = b.flat().every((c) => c.mine || c.open);
-    if (allOpen) setWon(true);
-  }, []);
+  const reset = () => { setGrid(build()); setState("playing"); setFlags(0); setTime(0); };
 
-  const reveal = (r: number, c: number) => {
-    if (dead || won) return;
-    let b = board;
-    if (!started) {
-      b = plant(board, r, c);
-      setStarted(true);
-    }
-    if (b[r][c].flag || b[r][c].open) return;
-    b = b.map((row) => row.map((cell) => ({ ...cell })));
-
-    if (b[r][c].mine) {
-      b.flat().forEach((cell) => { if (cell.mine) cell.open = true; });
-      setBoard(b);
-      setDead(true);
-      return;
-    }
-
-    const stack: [number, number][] = [[r, c]];
-    while (stack.length) {
-      const [cr, cc] = stack.pop()!;
-      const cell = b[cr][cc];
-      if (cell.open || cell.flag) continue;
-      cell.open = true;
-      if (cell.adj === 0) {
-        for (let dr = -1; dr <= 1; dr++)
-          for (let dc = -1; dc <= 1; dc++) {
-            const nr = cr + dr, nc = cc + dc;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !b[nr][nc].open) stack.push([nr, nc]);
-          }
+  const reveal = useCallback((g: Cell[][], r: number, c: number) => {
+    const cell = g[r][c];
+    if (cell.open || cell.flag) return;
+    cell.open = true;
+    if (cell.n === 0 && !cell.mine) {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) reveal(g, nr, nc);
       }
     }
-    setBoard(b);
-    checkWin(b);
+  }, []);
+
+  const click = (r: number, c: number) => {
+    if (state !== "playing") return;
+    const g = grid.map((row) => row.map((cell) => ({ ...cell })));
+    const cell = g[r][c];
+    if (cell.flag) return;
+    if (cell.mine) {
+      g.forEach((row) => row.forEach((cl) => { if (cl.mine) cl.open = true; }));
+      setGrid(g); setState("lost");
+      return;
+    }
+    reveal(g, r, c);
+    setGrid(g);
+    const closed = g.flat().filter((cl) => !cl.open).length;
+    if (closed === MINES) setState("won");
   };
 
-  const toggleFlag = (e: React.MouseEvent, r: number, c: number) => {
+  const rightClick = (e: React.MouseEvent, r: number, c: number) => {
     e.preventDefault();
-    if (dead || won || board[r][c].open) return;
-    const b = board.map((row) => row.map((cell) => ({ ...cell })));
-    b[r][c].flag = !b[r][c].flag;
-    setBoard(b);
-  };
-
-  const reset = () => {
-    setBoard(emptyBoard());
-    setStarted(false);
-    setDead(false);
-    setWon(false);
+    if (state !== "playing") return;
+    const g = grid.map((row) => row.map((cell) => ({ ...cell })));
+    const cell = g[r][c];
+    if (cell.open) return;
+    cell.flag = !cell.flag;
+    setFlags((f) => f + (cell.flag ? 1 : -1));
+    setGrid(g);
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#bdbdbd] p-4 select-none">
-      <div className="flex w-full max-w-xs items-center justify-between rounded-lg bg-[#c0c0c0] px-3 py-2 shadow-inner">
-        <span className="rounded bg-black px-2 py-0.5 font-mono text-[18px] font-bold text-red-500">
-          {String(MINES - flags).padStart(3, "0")}
-        </span>
-        <button onClick={reset} className="text-[24px] leading-none" title="Novo jogo">
-          {dead ? "😵" : won ? "😎" : "🙂"}
+    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#f5f5f7] dark:bg-[#1c1c1e]">
+      <div className="flex w-[312px] items-center justify-between rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-black/5 dark:bg-white/10 dark:ring-white/10">
+        <span className="text-[13px] font-semibold text-red-500">💣 {MINES - flags}</span>
+        <button onClick={reset} className="text-[20px]">
+          {state === "won" ? "😎" : state === "lost" ? "😵" : "🙂"}
         </button>
-        <span className="rounded bg-black px-2 py-0.5 font-mono text-[18px] font-bold text-red-500">
-          {String(flags).padStart(3, "0")}
-        </span>
+        <span className="text-[13px] font-semibold tabular-nums opacity-60">⏱ {time}</span>
       </div>
-
-      <div className="rounded-lg bg-[#c0c0c0] p-1.5 shadow-inner" style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 2 }}>
-        {board.map((row, r) =>
-          row.map((cell, c) => (
-            <button
-              key={`${r}-${c}`}
-              onClick={() => reveal(r, c)}
-              onContextMenu={(e) => toggleFlag(e, r, c)}
-              className={`flex h-8 w-8 items-center justify-center text-[15px] font-bold ${
-                cell.open
-                  ? "bg-[#d6d6d6]"
-                  : "bg-[#e8e8e8] shadow-[inset_-2px_-2px_0_#7b7b7b,inset_2px_2px_0_#fff] hover:bg-[#f0f0f0]"
-              }`}
-              style={{ color: cell.open && !cell.mine ? NUM_COLORS[cell.adj] : undefined }}
-            >
-              {cell.open ? (cell.mine ? "💣" : cell.adj || "") : cell.flag ? "🚩" : ""}
-            </button>
-          ))
-        )}
+      <div className="rounded-xl bg-white p-2 shadow-sm ring-1 ring-black/5 dark:bg-white/10 dark:ring-white/10">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${COLS}, 32px)` }}>
+          {grid.map((row, r) =>
+            row.map((cell, c) => (
+              <button
+                key={`${r}-${c}`}
+                onClick={() => click(r, c)}
+                onContextMenu={(e) => rightClick(e, r, c)}
+                className={`flex h-8 w-8 items-center justify-center border border-black/5 text-[14px] font-bold dark:border-white/5 ${
+                  cell.open
+                    ? cell.mine
+                      ? "bg-red-500"
+                      : "bg-black/[0.03] dark:bg-white/[0.06]"
+                    : "bg-black/[0.08] hover:bg-black/[0.12] dark:bg-white/[0.12] dark:hover:bg-white/[0.18]"
+                }`}
+                style={{ color: cell.open && !cell.mine ? NUM_COLORS[cell.n] : undefined }}
+              >
+                {cell.open ? (cell.mine ? "💣" : cell.n || "") : cell.flag ? "🚩" : ""}
+              </button>
+            ))
+          )}
+        </div>
       </div>
-
-      {(dead || won) && (
-        <p className="text-[14px] font-semibold text-black/70">
-          {won ? "Você venceu! Clique no rosto para jogar de novo." : "Boom! Clique no rosto para tentar de novo."}
+      {state !== "playing" && (
+        <p className="text-[13px] font-medium">
+          {state === "won" ? "Você venceu! 🎉" : "Você perdeu. Clique no rosto para tentar de novo."}
         </p>
       )}
     </div>

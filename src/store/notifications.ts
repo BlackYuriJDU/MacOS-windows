@@ -11,29 +11,25 @@ export interface Notification {
 
 interface NotifState {
   items: Notification[];
-  centerOpen: boolean;
   push: (n: Omit<Notification, "id" | "time">) => void;
   dismiss: (id: number) => void;
-  clearAll: () => void;
-  setCenterOpen: (v: boolean) => void;
+  clear: () => void;
 }
 
-let nextId = 1;
+let seq = 1;
 const MAX = 50;
 
 export const useNotifications = create<NotifState>((set) => ({
   items: [],
-  centerOpen: false,
   push: (n) =>
     set((s) => ({
-      items: [{ ...n, id: nextId++, time: Date.now() }, ...s.items].slice(0, MAX),
+      items: [{ ...n, id: seq++, time: Date.now() }, ...s.items].slice(0, MAX),
     })),
-  dismiss: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
-  clearAll: () => set({ items: [] }),
-  setCenterOpen: (centerOpen) => set({ centerOpen }),
+  dismiss: (id) => set((s) => ({ items: s.items.filter((x) => x.id !== id) })),
+  clear: () => set({ items: [] }),
 }));
 
-/** Atalho para qualquer módulo emitir uma notificação. */
+/** Atalho global para emitir notificação de qualquer lugar. */
 export function notify(appId: string, appName: string, title: string, body: string) {
   useNotifications.getState().push({ appId, appName, title, body });
 }

@@ -56,6 +56,7 @@ pub fn run() {
             appstore::winget_available,
             appstore::store_search,
             appstore::store_install,
+            appstore::store_uninstall,
             appstore::list_installed_apps,
             appstore::app_icon,
             appstore::launch_app,

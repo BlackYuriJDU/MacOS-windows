@@ -30,6 +30,7 @@ export default function App() {
   const spotlight = useOverlays((s) => s.spotlight);
   const launchpad = useOverlays((s) => s.launchpad);
   const controlCenter = useOverlays((s) => s.controlCenter);
+  const notifCenter = useOverlays((s) => s.notifCenter);
   const locked = useSession((s) => s.locked);
 
   /* Tema claro/escuro/automático */
@@ -152,6 +153,8 @@ export default function App() {
           {spotlight && <Spotlight />}
           {launchpad && <Launchpad />}
           {controlCenter && <ControlCenter />}
+          <NotificationBanner />
+          {notifCenter && <NotificationCenter />}
           {locked && <LockScreen />}
           <NotificationBanner />
           <NotificationCenter />

@@ -45,8 +45,9 @@ export interface TrashEntry {
 
 export interface InstalledApp {
   name: string;
-  path: string;
-  publisher?: string | null;
+  id: string; // exe path (Win32) ou AppUserModelID (UWP)
+  publisher: string;
+  is_uwp: boolean;
 }
 
 export interface StorePackage {

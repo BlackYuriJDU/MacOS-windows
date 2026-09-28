@@ -157,7 +157,7 @@ export default function Safari() {
                 </span>
                 {d.status === "done" && d.path && (
                   <button
-                    onClick={() => ipc.launchApp(d.path!)}
+                    onClick={() => ipc.openPath(d.path!)}
                     className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-white"
                   >
                     Abrir
